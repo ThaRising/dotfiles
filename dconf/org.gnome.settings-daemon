@@ -1,0 +1,27 @@
+[plugins/color]
+night-light-enabled=true
+night-light-temperature=uint32 3188
+
+[plugins/media-keys]
+custom-keybindings=['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/']
+email=@as []
+home=['<Super>e']
+screensaver=['<Super>l']
+screenshot=@as []
+terminal=@as []
+www=@as []
+
+[plugins/media-keys/custom-keybindings/custom0]
+binding='<Super>t'
+command='jumpapp kitty'
+name='Launch Terminal'
+
+[plugins/media-keys/custom-keybindings/custom1]
+binding='<Super>b'
+command='jumpapp chromium'
+name='Launcher Browser'
+
+[plugins/media-keys/custom-keybindings/custom2]
+binding='Print'
+command='flameshot gui'
+name='Screenshot'
