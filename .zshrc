@@ -22,7 +22,10 @@ antigen apply
 
 export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border'
 source /usr/share/doc/fzf/examples/key-bindings.zsh
-source /usr/share/doc/fzf/examples/completion.zsh
+# This file is only present on Debian-Systems
+if [ lsb_release -i | rev | cut -d ':' -f 1 | rev | tr -d '[:blank:]' = 'Debian' ]; then
+    source /usr/share/doc/fzf/examples/completion.zsh
+fi
 
 # NPM Aliases
 nvm() {
@@ -31,21 +34,18 @@ nvm() {
     [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
     nvm "$@"
 }
-
 node() {
     unset -f node
     export NVM_DIR=~/.nvm
     [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
     node "$@"
 }
-
 npm() {
     unset -f npm
     export NVM_DIR=~/.nvm
     [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
     npm "$@"
 }
-
 ng() {
     unset -f ng
     export NVM_DIR=~/.nvm
@@ -59,7 +59,7 @@ alias code="code --user-data-dir=$HOME"
 
 # Alias SSH with the Kitty command, to copy term-info to the other server
 # This avoids formatting issues and other strange bugs
-if [ $(ps -o comm= -p "$(($(ps -o ppid= -p "$(($(ps -o sid= -p "$$")))")))") = "kitty" ]; then
+if [ $TERM = "xterm-kitty" ]; then
     function ssh() {
         # -T needs to be passed to SSH directly,
         # because it disallows Pseudo-Terminals,
