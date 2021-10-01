@@ -1,6 +1,9 @@
-from pathlib import Path
+#!/usr/bin/python3
 import shutil
+import subprocess
+from pathlib import Path
 
+# TEST_OVERRIDE_DEST = "/tmp/kochbehome"
 TEST_OVERRIDE_DEST = ""
 
 
@@ -32,3 +35,16 @@ if __name__ == '__main__':
 
     for item in items_to_copy:
         recursive_copymerge(item)
+
+    print("Copying of Configuration-Files done.")
+    print()
+    print("Importing dconf Shortcuts...")
+
+    dconf_dir = (CURRENT_DIR / "dconf").iterdir()
+    for config in dconf_dir:
+        dconf_path = "/" + config.name.replace(".", "/") + "/"
+        result = subprocess.run(
+            f"dconf load {dconf_path} < {config.absolute()!s}",
+            capture_output=False,
+            shell=True
+        )
