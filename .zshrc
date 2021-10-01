@@ -23,7 +23,8 @@ antigen apply
 export FZF_DEFAULT_OPTS='--height 40% --layout=reverse --border'
 source /usr/share/doc/fzf/examples/key-bindings.zsh
 # This file is only present on Debian-Systems
-if [ lsb_release -i | rev | cut -d ':' -f 1 | rev | tr -d '[:blank:]' = 'Debian' ]; then
+local os_release=$(lsb_release -i | rev | cut -d ':' -f 1 | rev | tr -d '[:blank:]')
+if [ $os_release = 'Debian' ]; then
     source /usr/share/doc/fzf/examples/completion.zsh
 fi
 
