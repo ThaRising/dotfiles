@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+if wmctrl -lx | cut -d ' ' -f1,4 | grep 'chromium-browser.Chromium-browser'; then
+  wmctrl -i -a "$(wmctrl -lx | cut -d ' ' -f1,4 | grep 'chromium-browser.Chromium-browser' | tail -n1 | cut -d' ' -f 1)"
+else
+  flatpak run 'com.github.Eloston.UngoogledChromium' &
+  sleep 1
+
+  # Sometimes Chromium tries to resume the previous session, which is bugged
+  if ! wmctrl -lx | cut -d ' ' -f1,4 | grep 'chromium-browser.Chromium-browser'; then
+    flatpak kill 'com.github.Eloston.UngoogledChromium'
+    flatpak run 'com.github.Eloston.UngoogledChromium' &
+  fi
+fi
