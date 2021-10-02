@@ -53,18 +53,21 @@ if __name__ == '__main__':
     print("Symlinking custom Scripts...")
 
     scripts_dir_content = (CURRENT_DIR / ".scripts").iterdir()
+    SCRIPTS_PATH = USER_HOME_DIR / '.scripts'
     for script in scripts_dir_content:
+        # Make all scripts executable
+        subprocess.run(f"chmod +x {(SCRIPTS_PATH / script.name)!s}", shell=True)
+
         if script.name.endswith(".global"):
-            scripts_path = USER_HOME_DIR / '.scripts'
             # Symlink from myscript.global to myscript in the same dir
             subprocess.run(
-                f"ln -s {(scripts_path / script.name)!s} "
-                f"{(scripts_path / script.name.replace('.global', ''))!s}",
+                f"ln -s {(SCRIPTS_PATH / script.name)!s} "
+                f"{(SCRIPTS_PATH / script.name.replace('.global', ''))!s}",
                 shell=True
             )
             # Symlink all myscript.global scripts to PATH
             subprocess.run(
-                f"sudo ln -s {(USER_HOME_DIR / '.scripts' / script.name)!s} "
+                f"sudo ln -s {(SCRIPTS_PATH / script.name)!s} "
                 f"/usr/bin/{script.name.replace('.global', '')}",
                 shell=True
             )
