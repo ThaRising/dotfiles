@@ -47,9 +47,7 @@ class User:
             for i in file_or_dir.iterdir():
                 self.recursive_merge_files(i)
 
-    def run_command_as(
-            self, cmd: Union[str, list], **kwargs
-    ) -> Optional[subprocess.Popen[str]]:
+    def run_command_as(self, cmd: Union[str, list], **kwargs):
         return subprocess.Popen(f"sudo -u {self.name} {cmd}", shell=True, **kwargs)
 
 
