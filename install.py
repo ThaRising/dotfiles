@@ -1,10 +1,35 @@
 #!/usr/bin/python3
+import argparse
+import os
+import pwd
 import shutil
 import subprocess
 from pathlib import Path
+from typing import Tuple
 
+# Uncomment this for Testing:
 # TEST_OVERRIDE_DEST = "/tmp/kochbehome"
 TEST_OVERRIDE_DEST = ""
+
+USER_HOME_DIR = TEST_OVERRIDE_DEST or Path.home()
+CURRENT_DIR = Path(__file__).parent
+
+ITEMS_TO_IGNORE = (
+    ".gitignore", ".idea", ".git", "README.md", "install.py", "dconf"
+)
+
+
+def get_user_info(username: str) -> Tuple[str, int, int]:
+    pw_record = pwd.getpwnam(username)
+    user_home = pw_record.pw_dir
+    user_uid = pw_record.pw_uid
+    user_gid = pw_record.pw_gid
+    return user_home, user_gid, user_uid
+
+
+def demote(uid: int, gid: int):
+    os.setgid(gid)
+    os.setuid(uid)
 
 
 def recursive_copymerge(file_or_dir: Path, force: bool = True):
@@ -21,35 +46,25 @@ def recursive_copymerge(file_or_dir: Path, force: bool = True):
             recursive_copymerge(i)
 
 
-if __name__ == '__main__':
-    USER_HOME_DIR = TEST_OVERRIDE_DEST or Path.home()
-    CURRENT_DIR = Path(__file__).parent
-
-    items_to_ignore = (
-        ".gitignore", ".idea", ".git", "README.md", "install.py", "dconf"
-    )
-    items_to_copy = [
-        item for item in CURRENT_DIR.iterdir()
-        if item.name not in items_to_ignore
-    ]
-
-    for item in items_to_copy:
-        recursive_copymerge(item)
-
-    print("Copying of Configuration-Files done.")
-    print()
-    print("Importing dconf Shortcuts...")
-
+def import_dconf_config() -> None:
     dconf_dir_content = (CURRENT_DIR / "dconf").iterdir()
     for config in dconf_dir_content:
         dconf_path = "/" + config.name.replace(".", "/") + "/"
-        result = subprocess.run(
+        subprocess.Popen(
             f"dconf load {dconf_path} < {config.absolute()!s}",
-            capture_output=False,
-            shell=True
+            shell=True, preexec_fn=demote(*userinfo)
         )
 
-    print("Completed dconf Imports.")
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Process some integers.')
+    parser.add_argument(
+        '--user', dest='user',
+        help='User to install dotfiles for.'
+    )
+    args = parser.parse_args()
+    *_, userinfo = get_user_info(args.user)
+
     print("Symlinking custom Scripts...")
 
     scripts_dir_content = (CURRENT_DIR / ".scripts").iterdir()
@@ -60,14 +75,33 @@ if __name__ == '__main__':
 
         if script.name.endswith(".global"):
             # Symlink from myscript.global to myscript in the same dir
-            subprocess.run(
+            subprocess.Popen(
                 f"ln -s {(SCRIPTS_PATH / script.name)!s} "
                 f"{(SCRIPTS_PATH / script.name.replace('.global', ''))!s}",
-                shell=True
+                shell=True, preexec_fn=demote(*userinfo)
             )
             # Symlink all myscript.global scripts to PATH
             subprocess.run(
-                f"sudo ln -s {(SCRIPTS_PATH / script.name)!s} "
+                f"ln -s {(SCRIPTS_PATH / script.name)!s} "
                 f"/usr/bin/{script.name.replace('.global', '')}",
                 shell=True
             )
+
+    print("Symlinking finished.")
+    print()
+    print("Copying configuration files...")
+
+    items_to_copy = [
+        item for item in CURRENT_DIR.iterdir()
+        if item.name not in ITEMS_TO_IGNORE
+    ]
+    for item in items_to_copy:
+        recursive_copymerge(item)
+
+    print("Copying of Configuration-Files done.")
+    print()
+    print("Importing dconf Shortcuts...")
+
+    import_dconf_config()
+
+    print("Completed dconf Imports.")
