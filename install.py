@@ -7,11 +7,6 @@ import subprocess
 from pathlib import Path
 from typing import Tuple
 
-# Uncomment this for Testing:
-# TEST_OVERRIDE_DEST = "/tmp/kochbehome"
-TEST_OVERRIDE_DEST = ""
-
-USER_HOME_DIR = TEST_OVERRIDE_DEST or Path.home()
 CURRENT_DIR = Path(__file__).parent
 
 ITEMS_TO_IGNORE = (
@@ -63,6 +58,23 @@ if __name__ == '__main__':
         help='User to install dotfiles for.'
     )
     args = parser.parse_args()
+
+    # Uncomment this for Testing:
+    # TEST_OVERRIDE_DEST = "/tmp/kochbehome"
+    TEST_OVERRIDE_DEST = ""
+    USER_HOME_DIR = TEST_OVERRIDE_DEST or get_user_info(args.user)[0]
+
+    print("Copying configuration files...")
+
+    items_to_copy = [
+        item for item in CURRENT_DIR.iterdir()
+        if item.name not in ITEMS_TO_IGNORE
+    ]
+    for item in items_to_copy:
+        recursive_copymerge(item)
+
+    print("Copying of Configuration-Files done.")
+
     *_, userinfo = get_user_info(args.user)
 
     print("Symlinking custom Scripts...")
@@ -88,17 +100,6 @@ if __name__ == '__main__':
             )
 
     print("Symlinking finished.")
-    print()
-    print("Copying configuration files...")
-
-    items_to_copy = [
-        item for item in CURRENT_DIR.iterdir()
-        if item.name not in ITEMS_TO_IGNORE
-    ]
-    for item in items_to_copy:
-        recursive_copymerge(item)
-
-    print("Copying of Configuration-Files done.")
     print()
     print("Importing dconf Shortcuts...")
 
