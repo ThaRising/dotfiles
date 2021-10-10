@@ -22,9 +22,9 @@ def get_user_info(username: str) -> Tuple[str, int, int]:
     return user_home, user_gid, user_uid
 
 
-def demote(uid: int, gid: int):
-    os.setgid(gid)
-    os.setuid(uid)
+def demote(uid_: int, gid_: int):
+    os.setgid(uid_)
+    os.setuid(gid_)
 
 
 def recursive_copymerge(file_or_dir: Path, force: bool = True):
@@ -33,6 +33,7 @@ def recursive_copymerge(file_or_dir: Path, force: bool = True):
     if file_or_dir.is_file():
         if not dest_path.exists() or force:
             shutil.copy(src_path, dest_path)
+            os.chown(dest_path, uid=uid, gid=gid)
         return
     elif file_or_dir.is_dir():
         if not dest_path.exists():
@@ -47,7 +48,7 @@ def import_dconf_config() -> None:
         dconf_path = "/" + config.name.replace(".", "/") + "/"
         subprocess.Popen(
             f"dconf load {dconf_path} < {config.absolute()!s}",
-            shell=True, preexec_fn=demote(*userinfo)
+            shell=True, preexec_fn=demote(uid_=uid, gid_=gid)
         )
 
 
@@ -58,11 +59,12 @@ if __name__ == '__main__':
         help='User to install dotfiles for.'
     )
     args = parser.parse_args()
+    home, gid, uid = get_user_info(args.user)
 
     # Uncomment this for Testing:
     # TEST_OVERRIDE_DEST = "/tmp/kochbehome"
     TEST_OVERRIDE_DEST = ""
-    USER_HOME_DIR = TEST_OVERRIDE_DEST or get_user_info(args.user)[0]
+    USER_HOME_DIR = Path(TEST_OVERRIDE_DEST or home)
 
     print("Copying configuration files...")
 
@@ -74,8 +76,6 @@ if __name__ == '__main__':
         recursive_copymerge(item)
 
     print("Copying of Configuration-Files done.")
-
-    *_, userinfo = get_user_info(args.user)
 
     print("Symlinking custom Scripts...")
 
@@ -90,7 +90,7 @@ if __name__ == '__main__':
             subprocess.Popen(
                 f"ln -s {(SCRIPTS_PATH / script.name)!s} "
                 f"{(SCRIPTS_PATH / script.name.replace('.global', ''))!s}",
-                shell=True, preexec_fn=demote(*userinfo)
+                shell=True, preexec_fn=demote(uid_=uid, gid_=gid)
             )
             # Symlink all myscript.global scripts to PATH
             subprocess.run(
