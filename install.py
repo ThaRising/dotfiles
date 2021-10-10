@@ -17,6 +17,7 @@ ITEMS_TO_IGNORE = (
 class User:
     def __init__(self, name: str = "root") -> None:
         pw_record = pwd.getpwnam(name)
+        self.name = name
         self.home = pw_record.pw_dir
         self.uid = pw_record.pw_uid
         self.gid = pw_record.pw_gid
@@ -30,7 +31,7 @@ class User:
         for config in dconf_dir_content:
             dconf_path = "/" + config.name.replace(".", "/") + "/"
             subprocess.Popen(
-                f"dconf load {dconf_path} < {config.absolute()!s}",
+                f"sudo -u {self.name} dconf load {dconf_path} < {config.absolute()!s}",
                 shell=True, preexec_fn=self._demote()
             )
 
@@ -51,7 +52,7 @@ class User:
     def run_command_as(
             self, cmd: Union[str, list], **kwargs
     ) -> Optional[subprocess.Popen[str]]:
-        return subprocess.Popen(cmd, preexec_fn=self._demote(), shell=True, **kwargs)
+        return subprocess.Popen(f"sudo -u {self.name} {cmd}", shell=True, **kwargs)
 
 
 parser = argparse.ArgumentParser(description='Process some integers.')
@@ -84,6 +85,7 @@ if __name__ == '__main__':
     print("Symlinking custom Scripts...")
     scripts_dir_content = (CURRENT_DIR / ".scripts").iterdir()
     SCRIPTS_PATH = USER_HOME_DIR / '.scripts'
+    os.chown(SCRIPTS_PATH, uid=standard_user.uid, gid=standard_user.gid)
     for script in scripts_dir_content:
         # Make all scripts executable
         subprocess.run(f"chmod +x {(SCRIPTS_PATH / script.name)!s}", shell=True)
