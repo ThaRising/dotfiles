@@ -30,10 +30,7 @@ class User:
         dconf_dir_content = (CURRENT_DIR / "dconf").iterdir()
         for config in dconf_dir_content:
             dconf_path = "/" + config.name.replace(".", "/") + "/"
-            subprocess.Popen(
-                f"sudo -u {self.name} dconf load {dconf_path} < {config.absolute()!s}",
-                shell=True, preexec_fn=self._demote()
-            )
+            self.run_command_as(f"dconf load {dconf_path} < {config.absolute()!s}")
 
     def recursive_merge_files(self, file_or_dir: Path, force: bool = True):
         src_path = file_or_dir
@@ -46,6 +43,7 @@ class User:
         elif file_or_dir.is_dir():
             if not dest_path.exists():
                 dest_path.mkdir()
+                os.chown(dest_path, uid=self.uid, gid=self.gid)
             for i in file_or_dir.iterdir():
                 self.recursive_merge_files(i)
 
@@ -85,7 +83,6 @@ if __name__ == '__main__':
     print("Symlinking custom Scripts...")
     scripts_dir_content = (CURRENT_DIR / ".scripts").iterdir()
     SCRIPTS_PATH = USER_HOME_DIR / '.scripts'
-    os.chown(SCRIPTS_PATH, uid=standard_user.uid, gid=standard_user.gid)
     for script in scripts_dir_content:
         # Make all scripts executable
         subprocess.run(f"chmod +x {(SCRIPTS_PATH / script.name)!s}", shell=True)
